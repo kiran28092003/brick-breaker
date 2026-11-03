@@ -7,7 +7,7 @@ require('dotenv').config();
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// Middleware - Explicitly allow local development and your live Vercel frontend URL
+// Middleware - Explicitly allow localhost and any Vercel deployment (*.vercel.app)
 const allowedOrigins = [
   'http://localhost:5173',
   'https://brick-breaker-frontend-three.vercel.app'
@@ -17,11 +17,15 @@ app.use(cors({
   origin: function (origin, callback) {
     // Allow requests with no origin (like mobile apps, Postman, or curl requests)
     if (!origin) return callback(null, true);
-    if (allowedOrigins.indexOf(origin) === -1) {
-      const msg = 'The CORS policy for this site does not allow access from the specified Origin.';
-      return callback(new Error(msg), false);
+
+    // Allow any Vercel preview/production deployment or whitelisted local origin
+    const isVercelApp = origin.endsWith('.vercel.app');
+    if (allowedOrigins.indexOf(origin) !== -1 || isVercelApp) {
+      return callback(null, true);
     }
-    return callback(null, true);
+
+    const msg = 'The CORS policy for this site does not allow access from the specified Origin.';
+    return callback(new Error(msg), false);
   },
   credentials: true
 }));
