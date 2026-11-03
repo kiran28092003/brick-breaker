@@ -1,3 +1,4 @@
+// backend/routes/scoreRoutes.js
 const express = require('express');
 const router = express.Router();
 const Score = require('../models/Score');
@@ -12,14 +13,17 @@ router.get('/', async (req, res) => {
   }
 });
 
-// POST a new score
+// POST a new score (supports both 'playerName' and 'name' from frontend)
 router.post('/', async (req, res) => {
   try {
-    const { playerName, score } = req.body;
+    const playerName = req.body.playerName || req.body.name || 'Anonymous';
+    const score = req.body.score !== undefined ? Number(req.body.score) : 0;
+
     const newScore = new Score({ playerName, score });
     const savedScore = await newScore.save();
     res.status(201).json(savedScore);
   } catch (err) {
+    console.error('Validation/Save Error:', err.message);
     res.status(400).json({ error: err.message });
   }
 });
