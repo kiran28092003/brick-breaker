@@ -13,11 +13,22 @@ router.get('/', async (req, res) => {
   }
 });
 
-// POST a new score (supports both 'playerName' and 'name' from frontend)
+// POST a new score (supports both 'playerName' and 'name' from frontend with duplicate prevention)
 router.post('/', async (req, res) => {
   try {
-    const playerName = req.body.playerName || req.body.name || 'Anonymous';
+    const playerName = (req.body.playerName || req.body.name || 'Anonymous').trim();
     const score = req.body.score !== undefined ? Number(req.body.score) : 0;
+
+    // Prevent duplicate score submissions within a 5-second window
+    const recentDuplicate = await Score.findOne({
+      playerName: playerName,
+      score: score,
+      createdAt: { $gte: new Date(Date.now() - 5000) }
+    });
+
+    if (recentDuplicate) {
+      return res.status(200).json({ message: 'Score already recorded', data: recentDuplicate });
+    }
 
     const newScore = new Score({ playerName, score });
     const savedScore = await newScore.save();
